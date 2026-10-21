@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Тренажёр РК1 по C++</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Unbounded:wght@600;700&display=swap">
+<style>
+body{margin:0}img{max-width:100%}[hidden]{display:none!important}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+/* Layout: one narrow column like a phone screen; quiz view = sticky progress header, question, options, sticky "next" bar */
+:root{
+  --bg:#eef1f5; --surface:#ffffff; --ink:#152033; --muted:#5b6678; --line:#d8dee8;
+  --accent:#1f5fd1; --accent-ink:#ffffff; --accent-soft:#e3ecfb;
+  --code-bg:#f6f8fb; --kw:#1f5fd1; --num:#b0480b; --str:#0f7a52; --io:#8a3fb8;
+  --ok:#14804a; --ok-soft:#e2f4ea; --bad:#c22f3a; --bad-soft:#fbe7e8;
+  --f-display:"Unbounded","Golos Text",system-ui,sans-serif;
+  --f-body:"Golos Text",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-code:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  --r:14px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f141c; --surface:#171e29; --ink:#e6ebf3; --muted:#97a2b4; --line:#2a3443;
+  --accent:#6b9cf5; --accent-ink:#0b1220; --accent-soft:#1c2a44;
+  --code-bg:#111823; --kw:#7fa9f7; --num:#f0a26b; --str:#5fd09d; --io:#c99bf0;
+  --ok:#4cc985; --ok-soft:#15301f; --bad:#f07079; --bad-soft:#3a1a1e; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f141c; --surface:#171e29; --ink:#e6ebf3; --muted:#97a2b4; --line:#2a3443;
+  --accent:#6b9cf5; --accent-ink:#0b1220; --accent-soft:#1c2a44;
+  --code-bg:#111823; --kw:#7fa9f7; --num:#f0a26b; --str:#5fd09d; --io:#c99bf0;
+  --ok:#4cc985; --ok-soft:#15301f; --bad:#f07079; --bad-soft:#3a1a1e; color-scheme:dark}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--f-body);-webkit-tap-highlight-color:transparent}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.wrap{max-width:640px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,summary:focus-visible,input:focus-visible+span{outline:3px solid var(--accent);outline-offset:2px}
+h1,h2{font-family:var(--f-display);font-weight:700;text-wrap:balance;margin:0}
+.label{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.num{font-variant-numeric:tabular-nums}
+
+/* ---------- home ---------- */
+.home{padding-block:28px 40px;display:flex;flex-direction:column;gap:28px}
+.hero{display:flex;flex-direction:column;gap:10px}
+.hero h1{font-size:clamp(26px,7vw,36px);line-height:1.15}
+.hero h1 em{font-style:normal;color:var(--accent)}
+.hero p{margin:0;color:var(--muted);max-width:52ch}
+.overall{display:flex;gap:10px;flex-wrap:wrap}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-size:14px}
+.pill b{font-variant-numeric:tabular-nums}
+.pill.ok b{color:var(--ok)} .pill.bad b{color:var(--bad)}
+
+.resume{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-radius:var(--r);background:var(--accent);color:var(--accent-ink);border:0;text-align:left;width:100%}
+.resume small{display:block;opacity:.85;font-size:13px}
+.resume span.go{font-weight:700;white-space:nowrap}
+
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mode{display:flex;flex-direction:column;gap:4px;align-items:flex-start;text-align:left;padding:16px;border-radius:var(--r);background:var(--surface);border:1px solid var(--line);min-height:104px;transition:border-color .15s,transform .15s}
+.mode:hover{border-color:var(--accent)}
+.mode:active{transform:scale(.98)}
+.mode strong{font-size:16px}
+.mode span{font-size:13px;color:var(--muted)}
+.mode .big{font-family:var(--f-display);font-size:22px;color:var(--accent);line-height:1.1}
+.mode.wide{grid-column:1/-1;min-height:0;flex-direction:row;align-items:center;justify-content:space-between}
+.mode[disabled]{opacity:.5;cursor:default}
+.mode[disabled]:hover{border-color:var(--line)}
+
+.sections{display:flex;flex-direction:column;gap:10px}
+.sec{display:grid;grid-template-columns:auto 1fr auto;gap:4px 14px;align-items:center;padding:14px 16px;border-radius:var(--r);background:var(--surface);border:1px solid var(--line);text-align:left;width:100%}
+.sec:hover{border-color:var(--accent)}
+.sec .n{grid-row:1/3;width:36px;height:36px;border-radius:10px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-family:var(--f-display);font-size:15px}
+.sec .t{font-weight:600;min-width:0}
+.sec .c{font-size:13px;color:var(--muted);white-space:nowrap}
+.bar{grid-column:2/4;height:6px;border-radius:3px;background:var(--line);overflow:hidden;display:flex}
+.bar i{display:block;height:100%}
+.bar .g{background:var(--ok)} .bar .r{background:var(--bad)}
+
+.settings{display:flex;flex-direction:column;gap:12px;padding-top:4px}
+.toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:15px}
+.toggle input{position:absolute;opacity:0;width:1px;height:1px}
+.toggle span{width:46px;height:28px;border-radius:14px;background:var(--line);position:relative;flex:none;transition:background .15s}
+.toggle span::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--surface);box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .15s}
+.toggle input:checked+span{background:var(--accent)}
+.toggle input:checked+span::after{transform:translateX(18px)}
+.linkbtn{background:none;border:0;padding:0;color:var(--muted);text-decoration:underline;font-size:14px;align-self:flex-start}
+.confirm{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.confirm button{padding:6px 12px;border-radius:8px;border:1px solid var(--line);background:var(--surface)}
+.confirm .danger{background:var(--bad);color:#fff;border-color:var(--bad)}
+.tip{font-size:13px;color:var(--muted);margin:0}
+
+/* ---------- quiz ---------- */
+.qhead{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:10px 8px}
+.qhead .row{display:flex;align-items:center;gap:12px}
+.iconbtn{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;flex:none}
+.iconbtn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round}
+.qhead .count{flex:1;font-weight:600}
+.qhead .score{font-size:14px;color:var(--muted)}
+.qhead .score b{color:var(--ok)}
+.prog{height:6px;border-radius:3px;background:var(--line);margin-top:10px;overflow:hidden}
+.prog i{display:block;height:100%;background:var(--accent);transition:width .25s}
+
+.qbody{padding-block:14px 140px;display:flex;flex-direction:column;gap:16px}
+.meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.chip{font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;background:var(--accent-soft);color:var(--accent)}
+.chip.ghost{background:transparent;border:1px solid var(--line);color:var(--muted)}
+.qtext{font-size:19px;font-weight:600;line-height:1.4;margin:0;text-wrap:pretty}
+pre.code{margin:0;padding:14px 16px;border-radius:12px;background:var(--code-bg);border:1px solid var(--line);font:14px/1.6 var(--f-code);overflow-x:auto;tab-size:2;max-width:100%}
+.k{color:var(--kw);font-weight:600} .d{color:var(--num)} .s{color:var(--str)} .io{color:var(--io)}
+
+.opts{display:flex;flex-direction:column;gap:10px}
+.opt{display:flex;gap:12px;align-items:flex-start;width:100%;text-align:left;padding:14px;border-radius:var(--r);background:var(--surface);border:2px solid var(--line);min-height:56px;transition:border-color .12s,background .12s}
+.opt:hover:not([disabled]){border-color:var(--accent)}
+.opt .let{flex:none;width:28px;height:28px;border-radius:8px;border:1.5px solid var(--line);display:grid;place-items:center;font-weight:700;font-size:14px;color:var(--muted)}
+.opt .txt{min-width:0;padding-top:2px;overflow-wrap:anywhere}
+.opt .txt.mono{font:15px/1.5 var(--f-code);white-space:pre-wrap}
+.opt[disabled]{cursor:default}
+.opt.right{border-color:var(--ok);background:var(--ok-soft)}
+.opt.right .let{background:var(--ok);border-color:var(--ok);color:#fff}
+.opt.wrong{border-color:var(--bad);background:var(--bad-soft)}
+.opt.wrong .let{background:var(--bad);border-color:var(--bad);color:#fff}
+.opt.dim{opacity:.55}
+
+.fb{border-radius:var(--r);padding:14px 16px;display:flex;flex-direction:column;gap:6px;animation:rise .2s ease-out}
+.fb.bad{background:var(--bad-soft);border:1px solid var(--bad)}
+.fb.ok{background:var(--ok-soft);border:1px solid var(--ok)}
+.fb h3{margin:0;font-size:16px}
+.fb.bad h3{color:var(--bad)} .fb.ok h3{color:var(--ok)}
+.fb p{margin:0}
+.fb .ans{font-family:var(--f-code);font-size:14px;white-space:pre-wrap}
+.fb details summary{cursor:pointer;color:var(--ok);font-weight:600;font-size:14px}
+.fb details p{margin-top:6px}
+@keyframes rise{from{opacity:.4;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+.nextbar{position:fixed;left:0;right:0;bottom:0;z-index:6;background:linear-gradient(to top,var(--bg) 70%,transparent);padding-top:22px;padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))}
+.primary{width:100%;padding:16px;border-radius:var(--r);border:0;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:17px}
+.primary[disabled]{background:var(--line);color:var(--muted);cursor:default}
+
+/* ---------- result ---------- */
+.result{padding-block:28px 40px;display:flex;flex-direction:column;gap:22px}
+.scorecard{display:flex;align-items:center;gap:20px;padding:20px;border-radius:var(--r);background:var(--surface);border:1px solid var(--line)}
+.ring{--p:0;width:96px;height:96px;flex:none;border-radius:50%;background:conic-gradient(var(--accent) calc(var(--p)*1%),var(--line) 0);display:grid;place-items:center}
+.ring b{width:76px;height:76px;border-radius:50%;background:var(--surface);display:grid;place-items:center;font-family:var(--f-display);font-size:22px}
+.scorecard h2{font-size:20px}
+.scorecard p{margin:4px 0 0;color:var(--muted)}
+.btnrow{display:flex;gap:10px;flex-wrap:wrap}
+.btnrow button{flex:1 1 180px}
+.secondary{padding:15px;border-radius:var(--r);border:1px solid var(--line);background:var(--surface);font-weight:600}
+.mist{display:flex;flex-direction:column;gap:10px}
+.mi{padding:14px 16px;border-radius:var(--r);background:var(--surface);border:1px solid var(--line);display:flex;flex-direction:column;gap:8px;min-width:0}
+.mi .q{font-weight:600}
+.mi .a{font-size:14px}
+.mi .a code{font:14px var(--f-code);white-space:pre-wrap}
+.mi .a .y{color:var(--bad)} .mi .a .c{color:var(--ok)}
+.mi .e{font-size:14px;color:var(--muted);margin:0}
+
+@media (max-width:380px){.modes{grid-template-columns:1fr}.qtext{font-size:17px}pre.code{font-size:13px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+const SECTIONS = ["Ввод-вывод и выражения", "Инкремент, if, switch", "Циклы", "Массивы"];
+const Q = [{"s": 0, "t": "Какой заголовочный файл необходим для использования cin и cout?", "o": ["#include <iostream>", "#include <stdio.h>", "#include <cmath>", "#include <string>"], "e": "cin и cout — потоки ввода-вывода, они объявлены в <iostream> (input/output stream). <stdio.h> — это printf/scanf из языка C."}, {"s": 0, "t": "Какой оператор используется для вывода данных в поток cout?", "o": ["<<", ">>", "=", "->"], "e": "<< — оператор вставки в поток: данные «текут» в cout. Запомни: стрелки показывают направление данных — cout << x."}, {"s": 0, "t": "Какой оператор используется для ввода данных через cin?", "o": [">>", "<<", "=", "<-"], "e": ">> — оператор извлечения из потока: данные «текут» из cin в переменную — cin >> x."}, {"s": 0, "t": "Что означает endl в выражении cout << x << endl;?", "o": ["Перевод строки (и сброс буфера вывода)", "Конец программы", "Вывод пробела", "Очистка экрана"], "e": "endl = end line: переносит курсор на новую строку и сбрасывает буфер. По эффекту на экране похоже на \"\\n\"."}, {"s": 0, "t": "Как одной строкой считать с клавиатуры два целых числа a и b?", "o": ["cin >> a >> b;", "cin << a << b;", "cin >> a, b;", "cin >> a + b;"], "e": "Операторы >> можно соединять цепочкой: cin >> a >> b; Запятая не работает — запишется только a."}, {"s": 0, "t": "Что выведет фрагмент?", "c": "int a = 3, b = 4;\ncout << a << b << a + b;", "o": ["347", "3 4 7", "7", "3 47"], "e": "Между выводами нет пробелов, поэтому числа «слипаются»: 3, 4, затем a+b = 7 → 347."}, {"s": 0, "t": "Что выведет фрагмент?", "c": "int a = 5, b = 2;\ncout << a << \" \" << b << endl << a * b;", "o": ["5 2\n10", "5 2 10", "5210", "5 2\n7"], "e": "Выводится 5, пробел, 2, затем endl переносит строку, и выводится a*b = 10."}, {"s": 0, "t": "Что выведет фрагмент?", "c": "int x = 10, y = 3;\ncout << \"x=\" << x << \", y=\" << y;", "o": ["x=10, y=3", "x=x, y=y", "10, 3", "x=10,y=3"], "e": "Текст в кавычках выводится как есть, а x и y без кавычек заменяются значениями. Пробел после запятой есть в строке \", y=\"."}, {"s": 0, "t": "Что выведет фрагмент?", "c": "int a = 2, b = 8;\ncout << a + b << \" \" << a << b;", "o": ["10 28", "10 2 8", "28 10", "10 10"], "e": "Сначала a+b = 10, потом пробел, потом a и b без пробела между ними → 28."}, {"s": 0, "t": "Что выведет фрагмент?", "c": "int n = 7;\ncout << n << \"*2=\" << n * 2;", "o": ["7*2=14", "14", "n*2=14", "7*2=n*2"], "e": "Выводится n (7), затем строка \"*2=\" как текст, затем значение n*2 = 14."}, {"s": 0, "t": "Что выведет фрагмент?", "c": "cout << 17 / 5 << \" \" << 17 % 5;", "o": ["3 2", "3.4 2", "2 3", "3 3"], "e": "Деление целых чисел отбрасывает дробную часть: 17 / 5 = 3. Остаток: 17 % 5 = 2 (17 = 5·3 + 2)."}, {"s": 0, "t": "Что выведет фрагмент?", "c": "cout << 23 / 4 << \" \" << 23 % 4;", "o": ["5 3", "5.75 3", "6 3", "5 4"], "e": "23 / 4 = 5 (целая часть), 23 % 4 = 3, потому что 23 = 4·5 + 3."}, {"s": 0, "t": "Что выведет фрагмент?", "c": "cout << 7 % 3 + 10 / 4;", "o": ["3", "3.5", "1", "4"], "e": "% и / имеют одинаковый приоритет и выше, чем +. 7 % 3 = 1, 10 / 4 = 2 (целое деление), 1 + 2 = 3."}, {"s": 0, "t": "Что выведет фрагмент?", "c": "cout << 45 / 10 % 3 << \" \" << 45 % 10 / 3;", "o": ["1 1", "4 5", "1 2", "0 1"], "e": "/ и % выполняются слева направо. 45/10 = 4, 4%3 = 1. 45%10 = 5, 5/3 = 1."}, {"s": 0, "t": "Что выведет фрагмент?", "c": "int t = 125;\ncout << t / 60 << \":\" << t % 60;", "o": ["2:5", "2:05", "2.08", "125:60"], "e": "125 / 60 = 2 (часа/минуты), 125 % 60 = 5. Ведущий ноль cout сам не добавляет, поэтому 2:5."}, {"s": 0, "t": "Что выведет фрагмент?", "c": "double x = 7 / 2;\ncout << x;", "o": ["3", "3.5", "4", "3.0"], "e": "Сначала считается 7 / 2 — оба числа int, результат 3. Только потом 3 записывается в double. cout выводит 3 без «.0»."}, {"s": 0, "t": "Что выведет фрагмент?", "c": "int a = 9, b = 2;\ndouble r = (double)a / b;\ncout << r;", "o": ["4.5", "4", "4.0", "5"], "e": "(double)a превращает 9 в 9.0 ДО деления, поэтому деление вещественное: 9.0 / 2 = 4.5."}, {"s": 0, "t": "Что выведет фрагмент?", "c": "int a = 10, b = 4;\ncout << a / b << \" \" << a / (double)b;", "o": ["2 2.5", "2.5 2.5", "2 2", "2.5 2"], "e": "a / b — оба int → 2. a / (double)b — один операнд double → деление вещественное, 2.5."}, {"s": 0, "t": "Что выведет фрагмент?", "c": "int s = 7;\ndouble avg = s / 2 + 0.5;\ncout << avg;", "o": ["3.5", "4", "3", "4.0"], "e": "s / 2 = 7 / 2 = 3 (целое деление!), затем 3 + 0.5 = 3.5."}, {"s": 0, "t": "Что выведет фрагмент?", "c": "int a = 5;\ndouble b = a / 2 * 2.0;\ncout << b;", "o": ["4", "5", "4.0", "4.5"], "e": "Слева направо: a / 2 = 5 / 2 = 2 (целое), затем 2 * 2.0 = 4.0. cout печатает 4.0 как 4."}, {"s": 0, "t": "Что выведет фрагмент?", "c": "int a = 5, b = 2;\nbool c = false;\ncout << ((a > 3 && b < 5) || c);", "o": ["1", "0", "true", "false"], "e": "a > 3 (true) && b < 5 (true) = true; true || c = true. cout выводит bool как 1 или 0."}, {"s": 0, "t": "Что выведет фрагмент?", "c": "int x = 4;\ncout << (x > 2 && x < 4) << \" \" << (x == 4 || x < 0);", "o": ["0 1", "1 1", "1 0", "0 0"], "e": "x < 4 при x = 4 ложно, значит && даёт 0. x == 4 истинно, значит || даёт 1."}, {"s": 0, "t": "Что выведет фрагмент?", "c": "int a = 0, b = 3;\ncout << (!a && b) << (a || !b) << !(a == b);", "o": ["101", "111", "011", "100"], "e": "!a = !0 = 1, b = 3 ≠ 0 (истина) → 1. a || !b = 0 || 0 → 0. a == b ложно, ! даёт 1. Итого 101."}, {"s": 0, "t": "Что выведет фрагмент?", "c": "int a = 6, b = 0;\ncout << (a > 5 || b / a > 1) << (a < 5 && b > 0);", "o": ["10", "11", "00", "01"], "e": "a > 5 истинно, поэтому || дальше не проверяет (короткое вычисление) → 1. a < 5 ложно → && сразу 0."}, {"s": 0, "t": "Что выведет фрагмент?", "c": "int x = 7;\ncout << (x % 2 == 1 && x > 5) << (x < 0 || x > 10);", "o": ["10", "11", "01", "00"], "e": "7 % 2 == 1 и 7 > 5 → 1. 7 < 0 ложно и 7 > 10 ложно → 0."}, {"s": 0, "t": "Каким будет значение выражения !(x > 10) && (x % 2 == 0) при x = 8?", "o": ["true (1)", "false (0)", "8", "Ошибка компиляции"], "e": "x > 10 ложно, !ложь = истина. 8 % 2 == 0 — истина. истина && истина = true."}, {"s": 0, "t": "Запишите логическое выражение, истинное тогда и только тогда, когда n — положительное двузначное число.", "o": ["n >= 10 && n <= 99", "n > 10 && n < 99", "n >= 10 || n <= 99", "n / 10 == 2"], "e": "Двузначные положительные — от 10 до 99 включительно, оба условия должны выполняться одновременно → &&. С || было бы истинно для любого числа."}, {"s": 0, "t": "Запишите логическое выражение, проверяющее, что год y — високосный.", "o": ["(y % 4 == 0 && y % 100 != 0) || y % 400 == 0", "y % 4 == 0", "y % 4 == 0 && y % 100 == 0", "y % 400 == 0 && y % 4 != 0"], "e": "Високосный: делится на 4, но не на 100, ЛИБО делится на 400. Так 2000 — високосный, 1900 — нет, 2024 — да."}, {"s": 0, "t": "Чему равно значение выражения 5 > 3 && 2 > 4 || !(1 == 2)?", "o": ["true (1)", "false (0)", "Ошибка компиляции", "Зависит от компилятора"], "e": "&& выполняется раньше ||. 5>3 && 2>4 = true && false = false. !(1==2) = true. false || true = true."}, {"s": 0, "t": "Запишите логическое выражение, истинное, если число x лежит вне отрезка [1; 10].", "o": ["x < 1 || x > 10", "x < 1 && x > 10", "x <= 1 || x >= 10", "!(x > 1 && x < 10)"], "e": "Вне отрезка — меньше 1 ИЛИ больше 10. Через && условие никогда не выполнится. Концы 1 и 10 входят в отрезок, поэтому знаки строгие."}, {"s": 1, "t": "Что выведет фрагмент?", "c": "int x = 5;\nint y = x++ + 2;\ncout << x << \" \" << y;", "o": ["6 7", "6 8", "5 7", "5 8"], "e": "x++ — постфиксный: в выражение идёт старое значение 5, потом x станет 6. y = 5 + 2 = 7."}, {"s": 1, "t": "Что выведет фрагмент?", "c": "int x = 3;\nint y = ++x * 2;\ncout << x << \" \" << y;", "o": ["4 8", "4 6", "3 6", "3 8"], "e": "++x — префиксный: сначала x становится 4, затем используется. y = 4 * 2 = 8."}, {"s": 1, "t": "Что выведет фрагмент?", "c": "int a = 5;\nint b = a--;\nint c = --a;\ncout << a << b << c;", "o": ["353", "343", "354", "333"], "e": "b = a-- → b получает 5, a становится 4. c = --a → a становится 3, c = 3. Вывод: a=3, b=5, c=3."}, {"s": 1, "t": "Что выведет фрагмент?", "c": "int a = 4, b = 4;\nint x = a++ * 2;\nint y = ++b * 2;\ncout << x << \" \" << y;", "o": ["8 10", "10 10", "8 8", "10 8"], "e": "a++ * 2 использует старое a = 4 → 8. ++b * 2 сначала увеличивает b до 5 → 10."}, {"s": 1, "t": "Что выведет фрагмент?", "c": "int a = 10;\nint b = a-- - 3;\ncout << a << \" \" << b;", "o": ["9 7", "9 6", "10 7", "10 6"], "e": "a-- в выражении даёт старое значение 10: b = 10 - 3 = 7. После этого a = 9."}, {"s": 1, "t": "Что выведет фрагмент?", "c": "int n = 15;\nif (n % 3 == 0 && n % 5 == 0) cout << \"A\";\nelse if (n % 3 == 0) cout << \"B\";\nelse cout << \"C\";", "o": ["A", "B", "C", "AB"], "e": "15 делится и на 3, и на 5 — первое условие истинно, выводится A, остальные ветки else пропускаются."}, {"s": 1, "t": "Что выведет фрагмент?", "c": "int a = 7, b = 7;\nif (a > b) cout << \"1\";\nelse if (a == b) cout << \"2\";\nelse cout << \"3\";", "o": ["2", "1", "3", "23"], "e": "a > b ложно, a == b истинно → выводится 2. Выполняется только одна ветка цепочки if-else."}, {"s": 1, "t": "Что выведет фрагмент?", "c": "int t = -5;\nif (t > 0) cout << \"plus\";\nelse if (t < 0) cout << \"minus\";\nelse cout << \"zero\";", "o": ["minus", "plus", "zero", "minuszero"], "e": "t = -5: t > 0 ложно, t < 0 истинно → minus."}, {"s": 1, "t": "Что выведет фрагмент?", "c": "int a = 3, b = 8, c = 5;\nint m = a;\nif (b > m) m = b;\nif (c > m) m = c;\ncout << m;", "o": ["8", "5", "3", "16"], "e": "Поиск максимума: m = 3; 8 > 3 → m = 8; 5 > 8 ложно. Ответ 8. Здесь два отдельных if, не else if."}, {"s": 1, "t": "Что выведет фрагмент?", "c": "int score = 78;\nif (score >= 90) cout << \"A\";\nelse if (score >= 75) cout << \"B\";\nelse if (score >= 60) cout << \"C\";\nelse cout << \"F\";", "o": ["B", "A", "C", "BC"], "e": "78 >= 90 ложно, 78 >= 75 истинно → B. Следующие else if уже не проверяются."}, {"s": 1, "t": "Что выведет фрагмент?", "c": "int k = 2;\nswitch (k) {\n  case 1: cout << \"1\";\n  case 2: cout << \"2\";\n  case 3: cout << \"3\";\n  default: cout << \"D\";\n}", "o": ["23D", "2", "2D", "123D"], "e": "Нет break! Выполнение входит в case 2 и «проваливается» дальше через case 3 и default: 2, 3, D."}, {"s": 1, "t": "Что выведет фрагмент?", "c": "int k = 5;\nswitch (k % 3) {\n  case 0: cout << \"zero\"; break;\n  case 1: cout << \"one\"; break;\n  case 2: cout << \"two\"; break;\n}", "o": ["two", "one", "zero", "Ничего"], "e": "5 % 3 = 2 → case 2 → two, break выходит из switch."}, {"s": 1, "t": "Что выведет фрагмент?", "c": "char op = '*';\nint a = 6, b = 3;\nswitch (op) {\n  case '+': cout << a + b; break;\n  case '*': cout << a * b;\n  case '/': cout << a / b; break;\n}", "o": ["182", "18", "2", "189"], "e": "В case '*' нет break: выводится 6*3 = 18, затем выполнение проваливается в case '/' → 6/3 = 2. Итого 182."}, {"s": 1, "t": "Что выведет фрагмент?", "c": "int day = 6;\nswitch (day) {\n  case 6:\n  case 7: cout << \"Выходной\"; break;\n  default: cout << \"Рабочий\";\n}", "o": ["Выходной", "Рабочий", "ВыходнойРабочий", "Ничего"], "e": "case 6 пустой и без break, поэтому проваливается в case 7 → Выходной, затем break."}, {"s": 1, "t": "Что выведет фрагмент?", "c": "int m = 4;\nswitch (m) {\n  case 3: case 4: case 5: cout << \"весна\"; break;\n  case 6: case 7: case 8: cout << \"лето\"; break;\n  default: cout << \"другое\";\n}", "o": ["весна", "лето", "другое", "весналето"], "e": "Несколько case подряд работают как «или»: m = 4 попадает в группу 3, 4, 5 → весна, break."}, {"s": 2, "t": "Что выведет фрагмент?", "c": "int s = 0;\nfor (int i = 1; i <= 5; i++) s += i;\ncout << s;", "o": ["15", "10", "5", "21"], "e": "Сумма 1+2+3+4+5 = 15. i <= 5 — значит 5 тоже входит."}, {"s": 2, "t": "Что выведет фрагмент?", "c": "int p = 1;\nfor (int i = 1; i <= 4; i++) p *= i;\ncout << p;", "o": ["24", "10", "6", "120"], "e": "Произведение 1·2·3·4 = 24 (это 4!). Начальное p = 1, иначе всё было бы 0."}, {"s": 2, "t": "Что выведет фрагмент?", "c": "int s = 0;\nfor (int i = 2; i <= 10; i += 2) s += i;\ncout << s;", "o": ["30", "20", "25", "55"], "e": "i = 2, 4, 6, 8, 10 → 2+4+6+8+10 = 30."}, {"s": 2, "t": "Что выведет фрагмент?", "c": "int s = 0;\nfor (int i = 1; i <= 9; i += 2) s += i;\ncout << s;", "o": ["25", "16", "20", "45"], "e": "Нечётные i = 1, 3, 5, 7, 9 → сумма 25."}, {"s": 2, "t": "Что выведет фрагмент?", "c": "int s = 0;\nfor (int i = 10; i >= 1; i -= 3) s += i;\ncout << s;", "o": ["22", "21", "18", "55"], "e": "i = 10, 7, 4, 1 (следующее −2 < 1). 10+7+4+1 = 22."}, {"s": 2, "t": "Сколько раз выполнится тело цикла?", "c": "for (int i = 10; i > 0; i -= 3)\n  cout << i << \" \";", "o": ["4", "3", "10", "5"], "e": "i = 10, 7, 4, 1 — четыре раза. Потом i = −2, условие i > 0 ложно."}, {"s": 2, "t": "Сколько раз выполнится тело цикла?", "c": "for (int i = 0; i < 20; i += 4)\n  cout << i;", "o": ["5", "4", "20", "6"], "e": "i = 0, 4, 8, 12, 16 — пять раз. i = 20 уже не < 20."}, {"s": 2, "t": "Сколько раз выполнится тело цикла?", "c": "int i = 1;\nwhile (i < 100)\n  i *= 3;", "o": ["5", "4", "33", "6"], "e": "i: 1 → 3 → 9 → 27 → 81 → 243. Тело выполнилось 5 раз; при i = 243 условие i < 100 ложно."}, {"s": 2, "t": "Сколько раз выполнится тело цикла?", "c": "for (int i = 5; i <= 5; i++)\n  cout << i;", "o": ["1", "0", "5", "Бесконечно"], "e": "i = 5, условие 5 <= 5 истинно → одно выполнение. Затем i = 6, выход."}, {"s": 2, "t": "Сколько раз выполнится тело цикла?", "c": "int n = 64;\nwhile (n >= 1)\n  n /= 4;", "o": ["4", "3", "16", "Бесконечно"], "e": "n: 64 → 16 → 4 → 1 → 0. Четыре деления; при n = 0 условие n >= 1 ложно."}, {"s": 2, "t": "Что выведет фрагмент?", "c": "int n = 1234, s = 0;\nwhile (n > 0) {\n  s += n % 10;\n  n /= 10;\n}\ncout << s;", "o": ["10", "1234", "4321", "4"], "e": "Классика: n % 10 берёт последнюю цифру, n /= 10 её отбрасывает. Сумма цифр 4+3+2+1 = 10."}, {"s": 2, "t": "Что выведет фрагмент?", "c": "int n = 100, k = 0;\nwhile (n > 1) {\n  n /= 2;\n  k++;\n}\ncout << k;", "o": ["6", "7", "50", "5"], "e": "n: 100 → 50 → 25 → 12 → 6 → 3 → 1. Шесть делений, k = 6."}, {"s": 2, "t": "Что выведет фрагмент?", "c": "int n = 5, f = 1;\nwhile (n > 0) {\n  f *= n;\n  n -= 2;\n}\ncout << f;", "o": ["15", "120", "8", "60"], "e": "n = 5, 3, 1 (потом −1). f = 5 · 3 · 1 = 15. Шаг −2, а не −1, поэтому это не 5!."}, {"s": 2, "t": "Что выведет фрагмент?", "c": "int n = 2025, r = 0;\nwhile (n > 0) {\n  r = r * 10 + n % 10;\n  n /= 10;\n}\ncout << r;", "o": ["5202", "2025", "9", "520"], "e": "Переворот числа: каждая последняя цифра дописывается справа к r. 2025 → 5202."}, {"s": 2, "t": "Что выведет фрагмент?", "c": "int n = 3456, cnt = 0;\nwhile (n != 0) {\n  if (n % 10 % 2 == 0) cnt++;\n  n /= 10;\n}\ncout << cnt;", "o": ["2", "4", "1", "3"], "e": "Цифры 6, 5, 4, 3. Чётные — 6 и 4 → cnt = 2."}, {"s": 2, "t": "Чем характеризуется цикл do-while? Когда в нём проверяется условие и сколько раз минимум выполняется тело?", "o": ["Условие проверяется после тела; тело выполняется минимум 1 раз", "Условие проверяется до тела; тело может не выполниться ни разу", "Условие проверяется после тела; тело может не выполниться ни разу", "Условия нет; тело выполняется бесконечно"], "e": "do-while — цикл с постусловием: сначала тело, потом проверка. Поэтому один раз тело выполнится всегда."}, {"s": 2, "t": "Что выведет фрагмент?", "c": "int i = 10;\ndo {\n  cout << i;\n  i++;\n} while (i < 5);", "o": ["10", "Ничего", "1011121314", "5"], "e": "do-while сначала выполняет тело: выводится 10. Потом проверка 11 < 5 ложна — выход."}, {"s": 2, "t": "Сколько раз выполнится тело цикла?", "c": "int k = 0;\ndo {\n  k += 5;\n} while (k < 20);", "o": ["4", "3", "5", "20"], "e": "k: 5, 10, 15, 20. После четвёртого раза k = 20, проверка 20 < 20 ложна."}, {"s": 2, "t": "Что выведет фрагмент?", "c": "int x = 0;\ndo {\n  x += 3;\n} while (x % 4 != 0);\ncout << x;", "o": ["12", "3", "4", "0"], "e": "x: 3 (3%4≠0), 6, 9, 12 → 12 % 4 == 0, цикл остановился."}, {"s": 2, "t": "Чем цикл while отличается от do-while?", "o": ["while проверяет условие до тела (может не выполниться), do-while — после (минимум 1 раз)", "while проверяет условие после тела, do-while — до", "do-while нельзя прервать через break", "Ничем, это синонимы"], "e": "while — предусловие: проверка до тела. do-while — постусловие: тело выполняется хотя бы раз."}, {"s": 2, "t": "Что выведет фрагмент?", "c": "for (int i = 1; i <= 6; i++) {\n  if (i % 2 == 0) continue;\n  cout << i;\n}", "o": ["135", "246", "123456", "13"], "e": "continue пропускает остаток тела для чётных i. Выводятся нечётные: 1, 3, 5."}, {"s": 2, "t": "Что выведет фрагмент?", "c": "for (int i = 1; i <= 10; i++) {\n  if (i == 4) break;\n  cout << i;\n}", "o": ["123", "1234", "4", "12345678910"], "e": "При i = 4 break срабатывает ДО вывода, цикл прерывается. Выведено 1, 2, 3."}, {"s": 2, "t": "Что выведет фрагмент?", "c": "int s = 0;\nfor (int i = 1; i <= 10; i++) {\n  if (i % 3 != 0) continue;\n  s += i;\n}\ncout << s;", "o": ["18", "55", "37", "9"], "e": "Если i не делится на 3 — пропуск. Суммируются 3 + 6 + 9 = 18."}, {"s": 2, "t": "Что выведет фрагмент?", "c": "int i = 0;\nwhile (true) {\n  i += 2;\n  if (i > 7) break;\n}\ncout << i;", "o": ["8", "6", "7", "10"], "e": "i = 2, 4, 6, 8. При i = 8 условие 8 > 7 истинно → break. Выводится 8."}, {"s": 2, "t": "Что выведет фрагмент?", "c": "int s = 0;\nfor (int i = 1; i <= 100; i++) {\n  s += i;\n  if (s > 10) break;\n}\ncout << s;", "o": ["15", "10", "11", "5050"], "e": "s = 1, 3, 6, 10, 15. 10 > 10 ложно, а 15 > 10 истинно → break. Ответ 15."}, {"s": 2, "t": "Что выведет фрагмент?", "c": "int c = 0;\nfor (int i = 0; i < 3; i++)\n  for (int j = 0; j < 4; j++)\n    c++;\ncout << c;", "o": ["12", "7", "16", "9"], "e": "Вложенные циклы: внешний 3 раза × внутренний 4 раза = 12."}, {"s": 2, "t": "Что выведет фрагмент?", "c": "int c = 0;\nfor (int i = 1; i <= 3; i++)\n  for (int j = i; j <= 3; j++)\n    c++;\ncout << c;", "o": ["6", "9", "3", "4"], "e": "j начинается с i: при i=1 — 3 шага, i=2 — 2, i=3 — 1. Всего 3+2+1 = 6."}, {"s": 2, "t": "Что выведет фрагмент?", "c": "for (int i = 1; i <= 3; i++) {\n  for (int j = 1; j <= i; j++)\n    cout << \"*\";\n  cout << \" \";\n}", "o": ["* ** *** ", "*** ** * ", "*********", "* * * "], "e": "Во внутреннем цикле j идёт до i: 1, 2, 3 звёздочки, после каждой группы — пробел."}, {"s": 2, "t": "Что выведет фрагмент?", "c": "int c = 0;\nfor (int i = 1; i <= 4; i++)\n  for (int j = 1; j <= 4; j++)\n    if (i == j) c++;\ncout << c;", "o": ["4", "16", "1", "8"], "e": "i == j выполняется только на «диагонали»: (1,1), (2,2), (3,3), (4,4) → 4."}, {"s": 2, "t": "Что выведет фрагмент?", "c": "int c = 0;\nfor (int i = 0; i < 5; i++)\n  for (int j = 0; j < 5; j++)\n    if ((i + j) % 2 == 0) c++;\ncout << c;", "o": ["13", "12", "25", "10"], "e": "Всего 25 пар. Сумма чётна, если i и j одной чётности: чётных значений 3 (0,2,4), нечётных 2 → 3·3 + 2·2 = 13."}, {"s": 2, "t": "Что выведет фрагмент?", "c": "int x = 10;\nx += 5;\nx %= 4;\nx *= 3;\ncout << x;", "o": ["9", "45", "3", "15"], "e": "x = 10 + 5 = 15 → 15 % 4 = 3 → 3 * 3 = 9."}, {"s": 2, "t": "Что выведет фрагмент?", "c": "int a = 17;\na /= 3;\na -= 2;\na *= a;\ncout << a;", "o": ["9", "16", "3", "13"], "e": "17 / 3 = 5 (целое), 5 − 2 = 3, 3 * 3 = 9."}, {"s": 2, "t": "Что выведет фрагмент?", "c": "int a = 2, b = 3;\na += b;\nb *= a;\na -= b;\ncout << a << \" \" << b;", "o": ["-10 15", "5 15", "-10 9", "2 15"], "e": "a = 2 + 3 = 5; b = 3 * 5 = 15; a = 5 − 15 = −10."}, {"s": 2, "t": "Что выведет фрагмент?", "c": "int x = 7;\nx = x % 3 + x / 3;\ncout << x;", "o": ["3", "1", "2", "4"], "e": "7 % 3 = 1, 7 / 3 = 2 → 1 + 2 = 3."}, {"s": 2, "t": "Что выведет фрагмент?", "c": "int x = 20;\nx -= 4;\nx /= 3;\nx %= 4;\ncout << x;", "o": ["1", "5", "0", "2"], "e": "20 − 4 = 16 → 16 / 3 = 5 (целое) → 5 % 4 = 1."}, {"s": 3, "t": "Объявлен массив int a[10]; Каковы допустимые индексы его элементов?", "o": ["от 0 до 9", "от 1 до 10", "от 0 до 10", "от 1 до 9"], "e": "Нумерация в C++ с нуля, поэтому у массива из 10 элементов индексы 0…9. a[10] — уже выход за границу."}, {"s": 3, "t": "Как объявить массив из 8 вещественных чисел?", "o": ["double a[8];", "int a[8];", "double a(8);", "double[8] a;"], "e": "Вещественный тип — double (или float). Размер пишется в квадратных скобках после имени: double a[8];"}, {"s": 3, "t": "Чему равен индекс последнего элемента массива из N элементов?", "o": ["N − 1", "N", "N + 1", "1"], "e": "Индексы идут от 0 до N − 1, потому что первый элемент имеет индекс 0."}, {"s": 3, "t": "Как правильно объявить целочисленный массив с инициализацией значениями 1, 2, 3?", "o": ["int a[3] = {1, 2, 3};", "int a[3] = (1, 2, 3);", "int a = {1, 2, 3};", "int a[3] = [1, 2, 3];"], "e": "Список инициализации пишется в фигурных скобках. Также можно не указывать размер: int a[] = {1, 2, 3};"}, {"s": 3, "t": "Что содержит массив после объявления int a[5] = {};?", "o": ["Все пять элементов равны 0", "Случайный «мусор»", "Только a[0] = 0, остальное мусор", "Ошибка компиляции"], "e": "Пустые фигурные скобки обнуляют весь массив. Без = {} локальный массив содержал бы мусор."}, {"s": 3, "t": "Что выведет фрагмент?", "c": "int a[5] = {4, 7};\ncout << a[1] + a[3];", "o": ["7", "11", "4", "Мусор"], "e": "a = {4, 7, 0, 0, 0}: не указанные элементы заполняются нулями. a[1] + a[3] = 7 + 0 = 7."}, {"s": 3, "t": "Что выведет фрагмент?", "c": "int a[6] = {0};\na[2] = 5;\ncout << a[0] + a[2] + a[5];", "o": ["5", "0", "10", "Мусор"], "e": "{0} обнуляет весь массив, потом a[2] = 5. 0 + 5 + 0 = 5."}, {"s": 3, "t": "Что выведет фрагмент?", "c": "int a[4] = {3, 6, 9};\ncout << a[2] * a[3];", "o": ["0", "54", "81", "Мусор"], "e": "a = {3, 6, 9, 0}: a[3] не указан → 0. a[2] * a[3] = 9 * 0 = 0."}, {"s": 3, "t": "Что выведет фрагмент?", "c": "int a[] = {10, 20, 30, 40};\ncout << a[a[0] / 10];", "o": ["20", "10", "30", "Ошибка"], "e": "a[0] / 10 = 10 / 10 = 1, значит выводится a[1] = 20."}, {"s": 3, "t": "Что выведет фрагмент?", "c": "int a[] = {9, 8, 7, 6, 5};\nint i = 1;\ncout << a[i + 2] - a[i];", "o": ["-2", "2", "-1", "1"], "e": "a[i + 2] = a[3] = 6, a[i] = a[1] = 8. 6 − 8 = −2."}, {"s": 3, "t": "Что выведет фрагмент?", "c": "int a[] = {2, 5, 1, 8, 3};\nint s = 0;\nfor (int i = 0; i < 5; i++)\n  if (a[i] % 2 != 0) s += a[i];\ncout << s;", "o": ["9", "10", "19", "8"], "e": "Нечётные элементы: 5, 1, 3 → сумма 9."}, {"s": 3, "t": "Что выведет фрагмент?", "c": "int a[] = {4, -3, 6, -1, 2};\nint s = 0;\nfor (int i = 0; i < 5; i++)\n  if (a[i] > 0) s += a[i];\ncout << s;", "o": ["12", "8", "-4", "16"], "e": "Положительные: 4, 6, 2 → 12."}, {"s": 3, "t": "Что выведет фрагмент?", "c": "int a[] = {1, 2, 3, 4, 5, 6};\nint s = 0;\nfor (int i = 0; i < 6; i += 2) s += a[i];\ncout << s;", "o": ["9", "12", "21", "6"], "e": "i = 0, 2, 4 — это ИНДЕКСЫ. Элементы a[0], a[2], a[4] = 1, 3, 5 → 9."}, {"s": 3, "t": "Что выведет фрагмент?", "c": "int a[] = {3, 1, 4, 1, 5};\nint s = 0;\nfor (int i = 0; i < 5; i++) s += a[i];\ncout << s / 5;", "o": ["2", "2.8", "14", "3"], "e": "Сумма 3+1+4+1+5 = 14. 14 / 5 — деление целых → 2."}, {"s": 3, "t": "Что выведет фрагмент?", "c": "int a[] = {4, 6, 3, 8, 5};\nint p = 1;\nfor (int i = 0; i < 5; i++)\n  if (a[i] < 5) p *= a[i];\ncout << p;", "o": ["12", "7", "60", "1"], "e": "Элементы меньше 5: 4 и 3 (5 не входит, условие строгое). 4 · 3 = 12."}, {"s": 3, "t": "Что выведет фрагмент?", "c": "int a[] = {3, 9, 2, 7, 9, 1};\nint m = a[0], p = 0;\nfor (int i = 1; i < 6; i++)\n  if (a[i] > m) { m = a[i]; p = i; }\ncout << m << \" \" << p;", "o": ["9 1", "9 4", "9 0", "1 5"], "e": "Условие строгое (>): первый максимум 9 найден на индексе 1, второй 9 не больше — позиция не меняется."}, {"s": 3, "t": "Что выведет фрагмент?", "c": "int a[] = {6, 2, 8, 2, 5};\nint m = a[0], p = 0;\nfor (int i = 1; i < 5; i++)\n  if (a[i] <= m) { m = a[i]; p = i; }\ncout << m << \" \" << p;", "o": ["2 3", "2 1", "6 0", "5 4"], "e": "Условие нестрогое (<=): второй минимум 2 на индексе 3 тоже обновляет позицию → последнее вхождение."}, {"s": 3, "t": "Что выведет фрагмент?", "c": "int a[] = {5, -2, 8, -9, 4};\nint m = a[0];\nfor (int i = 1; i < 5; i++)\n  if (a[i] < m) m = a[i];\ncout << m;", "o": ["-9", "-2", "8", "4"], "e": "Поиск минимума: 5 → −2 → −9. Минимальный элемент −9."}, {"s": 3, "t": "Что выведет фрагмент?", "c": "int a[] = {7, 3, 9, 4};\nint mx = a[0], mn = a[0];\nfor (int i = 1; i < 4; i++) {\n  if (a[i] > mx) mx = a[i];\n  if (a[i] < mn) mn = a[i];\n}\ncout << mx - mn;", "o": ["6", "9", "3", "2"], "e": "Максимум 9, минимум 3 → 9 − 3 = 6."}, {"s": 3, "t": "Что выведет фрагмент?", "c": "int a[] = {4, 9, 2, 9, 6};\nint p = 0;\nfor (int i = 1; i < 5; i++)\n  if (a[i] >= a[p]) p = i;\ncout << p;", "o": ["3", "1", "9", "4"], "e": "Ищется индекс максимума, условие >= → берётся последнее вхождение 9, индекс 3."}, {"s": 3, "t": "Что выведет фрагмент?", "c": "int a[] = {-2, 0, 5, -7, 3, 0};\nint cnt = 0;\nfor (int i = 0; i < 6; i++)\n  if (a[i] >= 0) cnt++;\ncout << cnt;", "o": ["4", "2", "3", "6"], "e": "Неотрицательные (>= 0): 0, 5, 3, 0 → 4. Ноль тоже считается!"}, {"s": 3, "t": "Что выведет фрагмент?", "c": "int a[] = {12, 7, 30, 15, 9, 45};\nint cnt = 0;\nfor (int i = 0; i < 6; i++)\n  if (a[i] % 3 == 0 && a[i] % 5 == 0) cnt++;\ncout << cnt;", "o": ["3", "2", "4", "5"], "e": "Делятся и на 3, и на 5 (т.е. на 15): 30, 15, 45 → 3."}, {"s": 3, "t": "Что выведет фрагмент?", "c": "int a[] = {3, 8, 8, 1, 8, 5};\nint cnt = 0;\nfor (int i = 0; i < 6; i++)\n  if (a[i] == 8) cnt++;\ncout << cnt;", "o": ["3", "2", "8", "24"], "e": "Число 8 встречается в массиве 3 раза."}, {"s": 3, "t": "Что выведет фрагмент?", "c": "int a[] = {2, 4, 6, 8, 10};\nint k = -1;\nfor (int i = 0; i < 5; i++)\n  if (a[i] == 6) k = i;\ncout << k;", "o": ["2", "3", "6", "-1"], "e": "Линейный поиск: 6 стоит на индексе 2 (нумерация с нуля). −1 было бы, если бы элемент не нашёлся."}, {"s": 3, "t": "Что выведет фрагмент?", "c": "int a[] = {1, -3, 4, -5, 6, -2};\nint s = 0;\nfor (int i = 0; i < 6; i++)\n  if (i % 2 == 1) s += a[i];\ncout << s;", "o": ["-10", "11", "1", "-6"], "e": "Условие на ИНДЕКС: нечётные индексы 1, 3, 5 → −3 + (−5) + (−2) = −10."}, {"s": 3, "t": "Что выведет фрагмент?", "c": "int a[] = {1, 2, 3, 4, 5};\nfor (int i = 0; i < 2; i++) {\n  int t = a[i];\n  a[i] = a[4 - i];\n  a[4 - i] = t;\n}\nfor (int i = 0; i < 5; i++) cout << a[i];", "o": ["54321", "12345", "52341", "54345"], "e": "Разворот массива: меняются местами a[0]↔a[4], a[1]↔a[3]. Средний a[2] на месте."}, {"s": 3, "t": "Что выведет фрагмент?", "c": "int a[] = {1, 2, 3, 4, 5};\nint t = a[0];\nfor (int i = 0; i < 4; i++) a[i] = a[i + 1];\na[4] = t;\nfor (int i = 0; i < 5; i++) cout << a[i];", "o": ["23451", "51234", "22345", "12345"], "e": "Циклический сдвиг влево: первый элемент сохраняется в t, все сдвигаются на 1 влево, t ставится в конец."}, {"s": 3, "t": "Что выведет фрагмент?", "c": "int a[5] = {1, 2, 3, 4, 5};\nfor (int i = 0; i < 5; i++) a[i] = a[i] * a[i];\ncout << a[2] + a[4];", "o": ["34", "8", "16", "41"], "e": "Каждый элемент возводится в квадрат: a[2] = 9, a[4] = 25 → 34."}, {"s": 3, "t": "Что выведет фрагмент (один проход «пузырька»)?", "c": "int a[] = {5, 1, 4, 2};\nfor (int i = 0; i < 3; i++)\n  if (a[i] > a[i + 1]) {\n    int t = a[i]; a[i] = a[i + 1]; a[i + 1] = t;\n  }\nfor (int i = 0; i < 4; i++) cout << a[i];", "o": ["1425", "1245", "1524", "5142"], "e": "5,1 → обмен: 1 5 4 2; 5,4 → обмен: 1 4 5 2; 5,2 → обмен: 1 4 2 5. Наибольший «всплыл» в конец."}, {"s": 3, "t": "Что выведет фрагмент?", "c": "int a[5] = {1, 2, 3, 4, 5};\nfor (int i = 4; i > 0; i--) a[i] = a[i - 1];\nfor (int i = 0; i < 5; i++) cout << a[i];", "o": ["11234", "51234", "11111", "12345"], "e": "Сдвиг вправо с конца: a[4]=a[3], …, a[1]=a[0]. a[0] не меняется, поэтому 1 дублируется."}, {"s": 3, "t": "Что выведет фрагмент?", "c": "int m[2][3] = {{1, 2, 3}, {4, 5, 6}};\ncout << m[1][2];", "o": ["6", "5", "3", "Ошибка"], "e": "m[1][2] — строка 1 (вторая), столбец 2 (третий) → 6."}, {"s": 3, "t": "Что выведет фрагмент?", "c": "int m[3][3] = {{1, 2, 3}, {4, 5, 6}, {7, 8, 9}};\nint s = 0;\nfor (int i = 0; i < 3; i++) s += m[i][i];\ncout << s;", "o": ["15", "45", "6", "12"], "e": "m[i][i] — главная диагональ: 1 + 5 + 9 = 15."}, {"s": 3, "t": "Что выведет фрагмент?", "c": "int m[3][2] = {{1, 2}, {3, 4}, {5, 6}};\nint s = 0;\nfor (int i = 0; i < 3; i++) s += m[i][1];\ncout << s;", "o": ["12", "9", "21", "3"], "e": "m[i][1] — второй столбец каждой строки: 2 + 4 + 6 = 12."}, {"s": 3, "t": "Что выведет фрагмент?", "c": "int m[2][2] = {{1, 2}, {3, 4}};\nfor (int i = 0; i < 2; i++)\n  for (int j = 0; j < 2; j++)\n    cout << m[j][i];", "o": ["1324", "1234", "4321", "2413"], "e": "Обрати внимание: m[j][i] — индексы переставлены, массив обходится по столбцам: 1, 3, 2, 4."}, {"s": 3, "t": "Что выведет фрагмент?", "c": "int m[2][3] = {{1, 2, 3}, {4, 5, 6}};\nint s = 0;\nfor (int i = 0; i < 2; i++)\n  for (int j = 0; j < 3; j++)\n    if (j > i) s += m[i][j];\ncout << s;", "o": ["11", "21", "5", "16"], "e": "j > i — элементы выше главной диагонали: m[0][1]=2, m[0][2]=3, m[1][2]=6 → 11."}, {"s": 3, "t": "Что выведет фрагмент?", "c": "int a[] = {5, 10, 15, 20};\ncout << sizeof(a) / sizeof(a[0]);", "o": ["4", "16", "50", "20"], "e": "sizeof(a) — размер всего массива в байтах (16), sizeof(a[0]) — одного элемента (4). 16 / 4 = 4 элемента."}, {"s": 3, "t": "Сколько байт занимает массив int a[10], если sizeof(int) = 4?", "o": ["40", "10", "14", "4"], "e": "Размер массива = количество элементов × размер элемента = 10 × 4 = 40 байт."}, {"s": 3, "t": "Что выведет фрагмент?", "c": "int a[7];\ncout << sizeof(a) / sizeof(int);", "o": ["7", "28", "4", "Мусор"], "e": "Значения элементов не важны (там мусор), sizeof считает размер: 28 байт / 4 = 7 элементов."}, {"s": 3, "t": "Как средствами языка определить количество элементов массива a?", "o": ["sizeof(a) / sizeof(a[0])", "sizeof(a)", "a.length", "length(a)"], "e": "sizeof(a) — байты всего массива, делим на байты одного элемента. У обычного массива C++ нет .length (это Java/JS)."}, {"s": 3, "t": "Что выведет фрагмент (sizeof(double) = 8)?", "c": "double a[5];\ncout << sizeof(a);", "o": ["40", "5", "8", "13"], "e": "sizeof(a) — размер всего массива в байтах: 5 × 8 = 40."}, {"s": 3, "t": "Найдите ошибку во фрагменте и объясните её.", "c": "int a[5];\nfor (int i = 1; i <= 5; i++)\n  cin >> a[i];", "o": ["Выход за границу: индексы 0…4, а цикл обращается к a[5]; нужно i = 0; i < 5", "Нельзя использовать cin с массивами", "Массив нужно объявлять как int a[];", "Ошибок нет"], "e": "У массива из 5 элементов индексы 0…4. Цикл от 1 до 5 пропускает a[0] и пишет в a[5] — за пределы массива (неопределённое поведение)."}, {"s": 3, "t": "Что произойдёт при компиляции строки?", "c": "int a[3] = {1, 2, 3, 4};", "o": ["Ошибка компиляции: инициализаторов больше, чем размер массива", "Скомпилируется, лишняя 4 отбросится", "Массив автоматически станет размером 4", "Скомпилируется, 4 запишется в a[3]"], "e": "Размер 3, а значений 4 — компилятор выдаст ошибку «too many initializers». Меньше значений можно, больше — нельзя."}, {"s": 3, "t": "Какой цикл while будет бесконечным?", "o": ["int i = 0; while (i < 10) cout << i;", "int i = 0; while (i < 10) i++;", "int i = 10; while (i > 0) i--;", "int i = 0; while (i < 0) i++;"], "e": "В первом варианте i внутри тела не меняется, условие 0 < 10 всегда истинно. Ещё пример — while (true) без break."}, {"s": 3, "t": "Какой заголовок цикла нужен, чтобы тело cout << i << \" \"; вывело 5 4 3 2 1?", "o": ["for (int i = 5; i >= 1; i--)", "for (int i = 5; i > 1; i--)", "for (int i = 1; i <= 5; i++)", "for (int i = 5; i >= 1; i++)"], "e": "Начинаем с 5, уменьшаем (i--) и включаем 1 (i >= 1). С i > 1 не будет единицы, с i++ цикл станет бесконечным."}, {"s": 3, "t": "С какого индекса начинается нумерация элементов массива в C++? Проверяет ли компилятор выход за границы массива?", "o": ["С 0; нет, не проверяет", "С 1; нет, не проверяет", "С 0; да, выдаёт ошибку", "С 1; да, выдаёт ошибку"], "e": "Индексация с нуля. C++ не проверяет границы: a[10] у массива из 10 элементов скомпилируется, но это неопределённое поведение."}];
+Q.forEach((q,i)=>q.id=i+1);
+
+/* ---------- storage (safe) ---------- */
+const KEY='rk1cpp.v1';
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||{}}catch(e){return {}}}
+let store=Object.assign({stats:{},shuffle:true,session:null},load());
+function save(){try{localStorage.setItem(KEY,JSON.stringify(store))}catch(e){}}
+
+/* ---------- helpers ---------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+const TOK=/("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')|(\b\d+(?:\.\d+)?\b)|(\b(?:int|double|bool|char|for|while|do|if|else|switch|case|break|continue|default|return|true|false|sizeof)\b)|(\b(?:cout|cin|endl)\b)/g;
+function hl(code){let out='',last=0;code.replace(TOK,(m,s,d,k,io,off)=>{out+=esc(code.slice(last,off));out+=`<span class="${s?'s':d?'d':k?'k':'io'}">${esc(m)}</span>`;last=off+m.length;return m});return out+esc(code.slice(last))}
+const looksCode=s=>/[;{}()<>=%*\[\]]|^[-\d\s.:*,=]+$|\n/.test(s)||/^[a-z]+=/.test(s);
+function plural(n,a,b,c){n=Math.abs(n)%100;const m=n%10;if(n>10&&n<20)return c;if(m>1&&m<5)return b;if(m===1)return a;return c}
+
+/* ---------- state ---------- */
+function stat(id){return store.stats[id]}
+function wrongIds(){return Q.filter(q=>stat(q.id)&&stat(q.id).ok===false).map(q=>q.id)}
+
+function startSession(ids,title){
+  if(store.shuffle) ids=shuffle(ids);
+  store.session={title,ids,idx:0,answers:{},order:{}};
+  ids.forEach(id=>{store.session.order[id]=shuffle([0,1,2,3])});
+  save();renderQuiz();window.scrollTo(0,0);
+}
+
+/* ---------- HOME ---------- */
+function renderHome(){
+  const st=store.stats, answered=Object.keys(st).length;
+  const ok=Object.values(st).filter(x=>x.ok).length, bad=answered-ok;
+  const wrong=wrongIds().length;
+  const s=store.session;
+  const secs=SECTIONS.map((name,i)=>{
+    const qs=Q.filter(q=>q.s===i);
+    const g=qs.filter(q=>stat(q.id)&&stat(q.id).ok).length;
+    const r=qs.filter(q=>stat(q.id)&&!stat(q.id).ok).length;
+    return {name,i,total:qs.length,g,r,first:qs[0].id,last:qs[qs.length-1].id};
+  });
+  $('#app').innerHTML=`
+  <div class="wrap home">
+    <header class="hero">
+      <span class="label">Алгоритмизация и основы программирования</span>
+      <h1>Рубежный контроль&nbsp;1 <em>по&nbsp;C++</em></h1>
+      <p>125 вопросов из списка преподавателя. На каждый — четыре варианта, после ошибки сразу короткое объяснение. Прогресс сохраняется на этом устройстве.</p>
+      <div class="overall">
+        <span class="pill">Пройдено <b class="num">${answered}/${Q.length}</b></span>
+        <span class="pill ok">Верно <b class="num">${ok}</b></span>
+        <span class="pill bad">Ошибок <b class="num">${bad}</b></span>
+      </div>
+    </header>
+
+    ${s&&s.idx<s.ids.length?`<button class="resume" id="resume"><span><small>Продолжить: ${esc(s.title)}</small><b class="num">Вопрос ${s.idx+1} из ${s.ids.length}</b></span><span class="go">Дальше →</span></button>`:''}
+
+    <section class="modes" aria-label="Режимы">
+      <button class="mode" data-mode="quick"><span class="big">20</span><strong>Быстрая проверка</strong><span>Случайные вопросы из всех тем</span></button>
+      <button class="mode" data-mode="mist" ${wrong?'':'disabled'}><span class="big num">${wrong}</span><strong>Работа над ошибками</strong><span>${wrong?'Вопросы, где ты ошиблась':'Пока ошибок нет'}</span></button>
+      <button class="mode wide" data-mode="all"><span><strong>Все 125 вопросов</strong><br><span>Полный прогон, как перед самим РК</span></span><span class="big">→</span></button>
+      <button class="mode wide" data-mode="new" ${answered<Q.length?'':'disabled'}><span><strong>Только новые</strong><br><span>${Q.length-answered} ${plural(Q.length-answered,'вопрос','вопроса','вопросов')} ещё не открывала</span></span><span class="big">→</span></button>
+    </section>
+
+    <section class="sections" aria-label="Темы">
+      <span class="label">По темам</span>
+      ${secs.map(x=>`<button class="sec" data-sec="${x.i}">
+        <span class="n">${x.i+1}</span>
+        <span class="t">${esc(x.name)}</span>
+        <span class="c num">№${x.first}–${x.last}</span>
+        <span class="bar" aria-label="Верно ${x.g}, ошибок ${x.r} из ${x.total}"><i class="g" style="width:${x.g/x.total*100}%"></i><i class="r" style="width:${x.r/x.total*100}%"></i></span>
+      </button>`).join('')}
+    </section>
+
+    <section class="settings">
+      <label class="toggle" for="shuf">Перемешивать порядок вопросов<input type="checkbox" id="shuf" ${store.shuffle?'checked':''}><span></span></label>
+      <p class="tip">Варианты ответа перемешиваются всегда, так что запомнить «правильный — всегда первый» не получится.</p>
+      <div id="resetZone"><button class="linkbtn" id="reset">Сбросить весь прогресс</button></div>
+    </section>
+  </div>`;
+
+  $('#shuf').onchange=e=>{store.shuffle=e.target.checked;save()};
+  if($('#resume')) $('#resume').onclick=()=>{renderQuiz();window.scrollTo(0,0)};
+  document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{
+    const m=b.dataset.mode;
+    if(m==='quick') startSession(shuffle(Q.map(q=>q.id)).slice(0,20),'Быстрая проверка');
+    if(m==='all') startSession(Q.map(q=>q.id),'Все вопросы');
+    if(m==='mist') startSession(wrongIds(),'Работа над ошибками');
+    if(m==='new') startSession(Q.filter(q=>!stat(q.id)).map(q=>q.id),'Только новые');
+  });
+  document.querySelectorAll('[data-sec]').forEach(b=>b.onclick=()=>{
+    const i=+b.dataset.sec;startSession(Q.filter(q=>q.s===i).map(q=>q.id),SECTIONS[i]);
+  });
+  $('#reset').onclick=()=>{
+    $('#resetZone').innerHTML=`<div class="confirm">Удалить статистику по всем вопросам? <button class="danger" id="yes">Удалить</button><button id="no">Отмена</button></div>`;
+    $('#yes').onclick=()=>{store.stats={};store.session=null;save();renderHome()};
+    $('#no').onclick=renderHome;
+  };
+}
+
+/* ---------- QUIZ ---------- */
+function renderQuiz(){
+  const s=store.session;
+  if(!s||s.idx>=s.ids.length) return renderResult();
+  const id=s.ids[s.idx], q=Q[id-1], ord=s.order[id], picked=s.answers[id];
+  const answered=picked!==undefined;
+  const correctCount=Object.entries(s.answers).filter(([k,v])=>v===0).length;
+  const outQ=!!q.c&&/выведет/.test(q.t);
+  const L='1234';
+  $('#app').innerHTML=`
+  <div class="qhead"><div class="wrap">
+    <div class="row">
+      <button class="iconbtn" id="home" aria-label="На главную"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      <span class="count num">${s.idx+1} / ${s.ids.length}</span>
+      <span class="score num">верно <b>${correctCount}</b></span>
+    </div>
+    <div class="prog"><i style="width:${(s.idx+(answered?1:0))/s.ids.length*100}%"></i></div>
+  </div></div>
+
+  <main class="wrap qbody">
+    <div class="meta"><span class="chip">${esc(SECTIONS[q.s])}</span><span class="chip ghost num">№ ${q.id}</span></div>
+    <p class="qtext">${esc(q.t)}</p>
+    ${q.c?`<pre class="code"><code>${hl(q.c)}</code></pre>`:''}
+    <div class="opts" role="group" aria-label="Варианты ответа">
+      ${ord.map((oi,pos)=>{
+        let cls='';
+        if(answered){ if(oi===0) cls='right'; else if(oi===picked) cls='wrong'; else cls='dim'; }
+        return `<button class="opt ${cls}" data-oi="${oi}" ${answered?'disabled':''}><span class="let">${L[pos]}</span><span class="txt ${(outQ&&!/[а-яё]{4}/i.test(q.o[oi]))||looksCode(q.o[oi])?'mono':''}">${esc(q.o[oi])}</span></button>`;
+      }).join('')}
+    </div>
+    <div id="fb">${answered?feedback(q,picked):''}</div>
+  </main>
+
+  <div class="nextbar"><div class="wrap">
+    <button class="primary" id="next" ${answered?'':'disabled'}>${s.idx+1===s.ids.length?'Показать результат':'Дальше'}</button>
+  </div></div>`;
+
+  $('#home').onclick=()=>{renderHome();window.scrollTo(0,0)};
+  document.querySelectorAll('.opt').forEach(b=>b.onclick=()=>choose(+b.dataset.oi));
+  $('#next').onclick=next;
+}
+function feedback(q,picked){
+  if(picked===0) return `<div class="fb ok"><h3>Верно!</h3><details><summary>Почему так</summary><p>${esc(q.e)}</p></details></div>`;
+  return `<div class="fb bad"><h3>Неверно</h3><p>Правильный ответ: <span class="ans">${esc(q.o[0])}</span></p><p>${esc(q.e)}</p></div>`;
+}
+function choose(oi){
+  const s=store.session, id=s.ids[s.idx];
+  if(s.answers[id]!==undefined) return;
+  s.answers[id]=oi;
+  const prev=store.stats[id]||{n:0,w:0};
+  store.stats[id]={ok:oi===0,n:prev.n+1,w:prev.w+(oi===0?0:1)};
+  save();renderQuiz();
+  const fb=$('#fb'); if(fb&&oi!==0) fb.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function next(){
+  const s=store.session; s.idx++; save();
+  renderQuiz(); window.scrollTo(0,0);
+}
+
+/* ---------- RESULT ---------- */
+function renderResult(){
+  const s=store.session; if(!s){return renderHome()}
+  const total=s.ids.length, ok=s.ids.filter(id=>s.answers[id]===0).length;
+  const pct=total?Math.round(ok/total*100):0;
+  const wrong=s.ids.filter(id=>s.answers[id]!==undefined&&s.answers[id]!==0);
+  const msg=pct>=90?'Отлично, ты готова.':pct>=70?'Хорошо. Разбери ошибки ниже и повтори.':pct>=50?'Неплохая база. Пройди ошибки ещё раз.':'Стоит пройти темы по порядку и вернуться.';
+  $('#app').innerHTML=`
+  <div class="wrap result">
+    <span class="label">${esc(s.title)}</span>
+    <div class="scorecard">
+      <div class="ring" style="--p:${pct}"><b class="num">${pct}%</b></div>
+      <div><h2 class="num">${ok} из ${total}</h2><p>${msg}</p></div>
+    </div>
+    <div class="btnrow">
+      ${wrong.length?`<button class="primary" id="redo">Повторить ошибки (${wrong.length})</button>`:''}
+      <button class="secondary" id="toHome">На главную</button>
+    </div>
+    ${wrong.length?`<section class="mist"><span class="label">Разбор ошибок</span>
+      ${wrong.map(id=>{const q=Q[id-1];return `<div class="mi">
+        <span class="q"><span class="chip ghost num">№ ${q.id}</span> ${esc(q.t)}</span>
+        ${q.c?`<pre class="code"><code>${hl(q.c)}</code></pre>`:''}
+        <span class="a">Твой ответ: <code class="y">${esc(q.o[s.answers[id]])}</code></span>
+        <span class="a">Правильно: <code class="c">${esc(q.o[0])}</code></span>
+        <p class="e">${esc(q.e)}</p></div>`}).join('')}
+    </section>`:''}
+  </div>`;
+  if($('#redo')) $('#redo').onclick=()=>startSession(wrong,'Повтор ошибок');
+  $('#toHome').onclick=()=>{store.session=null;save();renderHome();window.scrollTo(0,0)};
+}
+
+/* ---------- keyboard (desktop) ---------- */
+document.addEventListener('keydown',e=>{
+  const s=store.session; if(!s||!$('.opts')) return;
+  const id=s.ids[s.idx];
+  if(/^[1-4]$/.test(e.key)&&s.answers[id]===undefined){choose(s.order[id][+e.key-1])}
+  else if(e.key==='Enter'&&s.answers[id]!==undefined){e.preventDefault();next()}
+});
+
+renderHome();
+</script>
+</body>
+</html>
